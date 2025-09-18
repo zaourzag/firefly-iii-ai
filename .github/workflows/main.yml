@@ -5,12 +5,14 @@ on:
     branches:
       - 'main'
       - 'dev'
+      - 'patch-1'
     tags:
       - 'v*'
   pull_request:
     branches:
       - 'main'
       - 'dev'
+      - 'patch-1'
 
 env:
   REGISTRY: ghcr.io
