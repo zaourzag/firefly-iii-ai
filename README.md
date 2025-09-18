@@ -67,6 +67,7 @@ services:
       PROVIDER: "openai"  # or "ollama"
       OPENAI_API_KEY: "your-openai-api-key"
       OPENAI_MODEL: "gpt-3.5-turbo"
+      # OPENAI_BASE_URL: "https://custom-endpoint.com/v1/"  # Optional: for custom endpoints (e.g., Gemini)
       
       # Ollama Configuration (if using Ollama)
       # OLLAMA_BASE_URL: "http://localhost:11434"
@@ -108,6 +109,7 @@ docker run -d \
   -e PROVIDER="openai" \
   -e OPENAI_API_KEY="your-openai-api-key" \
   -e OPENAI_MODEL="gpt-3.5-turbo" \
+  -e OPENAI_BASE_URL="https://custom-endpoint.com/v1/" \  # Optional: for custom endpoints
   -e LANGUAGE="EN" \
   -e AUTO_DESTINATION_ACCOUNT="true" \
   -e CREATE_DESTINATION_ACCOUNTS="true" \
@@ -132,6 +134,7 @@ docker run -d \
 | `PROVIDER` | `openai` | AI provider: `openai` or `ollama` |
 | `OPENAI_API_KEY` | - | OpenAI API key (required if using OpenAI) |
 | `OPENAI_MODEL` | `gpt-3.5-turbo` | OpenAI model to use |
+| `OPENAI_BASE_URL` | - | Custom OpenAI-compatible endpoint (optional) |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama base URL (required if using Ollama) |
 | `OLLAMA_MODEL` | `llama3.2` | Ollama model to use |
 | **Features** |
@@ -161,6 +164,7 @@ docker run -d \
   - `PROVIDER=openai`
   - `OPENAI_API_KEY` (required)
   - `OPENAI_MODEL` (optional, default: gpt-3.5-turbo)
+  - `OPENAI_BASE_URL` (optional, for custom endpoints)
 
 #### Ollama (Local)
 - **Pros**: Complete privacy, no API costs, runs locally
@@ -169,6 +173,106 @@ docker run -d \
   - `PROVIDER=ollama`
   - `OLLAMA_BASE_URL` (optional, default: http://localhost:11434)
   - `OLLAMA_MODEL` (optional, default: llama3.2)
+
+### Custom OpenAI Endpoints (OPENAI_BASE_URL)
+
+The `OPENAI_BASE_URL` environment variable allows you to use alternative OpenAI-compatible endpoints, including:
+
+- **Google Gemini** via OpenAI-compatible API
+- **Azure OpenAI** deployments
+- **Local OpenAI-compatible servers**
+- **Custom proxy servers or API gateways**
+
+#### Configuration Examples
+
+**Standard OpenAI (default behavior)**:
+```bash
+PROVIDER=openai
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-3.5-turbo
+# OPENAI_BASE_URL is optional - uses OpenAI's default endpoint
+```
+
+**Google Gemini via OpenAI-compatible endpoint**:
+```bash
+PROVIDER=openai
+OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+OPENAI_API_KEY=your-gemini-api-key
+OPENAI_MODEL=gemini-pro
+```
+
+**Azure OpenAI**:
+```bash
+PROVIDER=openai
+OPENAI_BASE_URL=https://your-resource.openai.azure.com/
+OPENAI_API_KEY=your-azure-api-key
+OPENAI_MODEL=gpt-35-turbo
+```
+
+**Local OpenAI-compatible server**:
+```bash
+PROVIDER=openai
+OPENAI_BASE_URL=http://localhost:8000/v1/
+OPENAI_API_KEY=local-key-or-empty
+OPENAI_MODEL=your-local-model
+```
+
+#### Docker Compose Example with Custom Endpoint
+
+```yaml
+version: '3.8'
+services:
+  firefly-ai:
+    image: ghcr.io/fspms/firefly-iii-ai:latest
+    environment:
+      # Firefly III Configuration
+      FIREFLY_URL: "https://your-firefly-instance.com"
+      FIREFLY_PERSONAL_TOKEN: "your-personal-access-token"
+      
+      # Custom OpenAI Endpoint Configuration
+      PROVIDER: "openai"
+      OPENAI_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+      OPENAI_API_KEY: "your-gemini-api-key"
+      OPENAI_MODEL: "gemini-pro"
+      
+      # Application Settings
+      LANGUAGE: "EN"
+      AUTO_DESTINATION_ACCOUNT: "true"
+      AUTO_BUDGET: "true"
+```
+
+#### Programmatic Usage
+
+The OpenAI service can also be configured programmatically:
+
+```javascript
+import OpenAiService from './src/OpenAiService.js';
+
+// Using environment variable (recommended)
+const service1 = new OpenAiService(
+  process.env.OPENAI_API_KEY,
+  process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+  'EN'
+  // baseURL will be read from OPENAI_BASE_URL environment variable
+);
+
+// Using explicit baseURL parameter (overrides environment variable)
+const service2 = new OpenAiService(
+  'your-api-key',
+  'gemini-pro',
+  'EN',
+  'https://generativelanguage.googleapis.com/v1beta/openai/'
+);
+```
+
+#### Gemini Compatibility Notes
+
+When using Google Gemini through OpenAI-compatible endpoints:
+- ✅ **Supported**: Text completion, chat completions, basic model parameters
+- ✅ **Compatible**: All core Firefly III AI categorization features
+- ⚠️ **Limited**: Some advanced OpenAI-specific features may not be available
+- 📝 **Models**: Use Gemini model names (e.g., `gemini-pro`, `gemini-1.5-pro`)
+- 🔑 **Authentication**: Requires a valid Gemini API key with appropriate permissions
 
 ## 🎯 Advanced Features
 
