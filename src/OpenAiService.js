@@ -1,3 +1,15 @@
+/**
+ * OpenAiService
+ *
+ * Usage example with baseURL for OpenAI-compatible endpoints (e.g. Gemini):
+ *   const service = new OpenAiService(
+ *     "GEMINI_API_KEY",
+ *     "gemini-2.0-flash",
+ *     "EN",
+ *     "https://generativelanguage.googleapis.com/v1beta/openai/"
+ *   );
+ */
+
 import OpenAI from "openai";
 import { getConfigVariable } from "./util.js";
 
@@ -7,14 +19,18 @@ export default class OpenAiService {
   #language;
   #DEBUG;
 
-  constructor(apiKey, model = "gpt-3.5-turbo-instruct", language = "FR") {
+  constructor(apiKey, model = "gpt-3.5-turbo-instruct", language = "FR", baseURL = null) {
     this.#model = model;
     this.#language = language;
     this.#DEBUG = getConfigVariable("DEBUG", "false") === "true";
 
-    this.#openAi = new OpenAI({
-      apiKey,
-    });
+    // Add baseURL if provided
+    const openAiConfig = { apiKey };
+    if (baseURL) {
+      openAiConfig.baseURL = baseURL;
+    }
+
+    this.#openAi = new OpenAI(openAiConfig);
   }
 
   #debugLog(message, data = null) {
@@ -146,7 +162,7 @@ ${languageConfig.budgetsList}
         instruction: this.#buildInstruction(autoDestinationAccount, autoBudget),
         subjectLanguage: "The subject is in English.",
         question: `In which category would a transaction (${type}) ${destinationTextEN} with the subject "${description}" fall into?`,
-        accountInstruction: autoDestinationAccount ? "Also suggest the most appropriate destination account from the list below, or suggest a new account name if none match. Use only the company/merchant name:" : "",
+        accountInstruction: autoDestinationAccount ? "Also suggest the most appropriate destination account from the list below, or suggest a new account name if none match. Use only the company/merchant/entity name (e.g., 'Amazon', 'Generali', 'McDonald's'), not the category + account name." : "",
         accountsList: autoDestinationAccount ? existingAccounts.join(", ") : "",
         budgetInstruction: autoBudget ? "Also suggest the most appropriate budget from the list below based on the category. Use only the budget name:" : "",
         budgetsList: autoBudget ? budgets.join(", ") : ""
@@ -157,7 +173,7 @@ ${languageConfig.budgetsList}
         instruction: this.#buildInstruction(autoDestinationAccount, autoBudget),
         subjectLanguage: "Le sujet est en français.",
         question: `Dans quelle catégorie une transaction (${type}) ${destinationText} avec le sujet "${description}" correspond-elle ?`,
-        accountInstruction: autoDestinationAccount ? "Suggère aussi le compte destinataire le plus approprié dans la liste ci-dessous, ou suggère un nouveau nom de compte si aucun ne correspond. Utilise seulement le nom de l'entreprise/merchant:" : "",
+        accountInstruction: autoDestinationAccount ? "Suggère aussi le compte destinataire le plus approprié dans la liste ci-dessous, ou suggère un nouveau nom de compte si aucun ne correspond. Utilise seulement le nom de l'entreprise/merchant/entité (ex: 'Amazon', 'Generali', 'McDonald's'), pas la catégorie + nom de compte." : "",
         accountsList: autoDestinationAccount ? existingAccounts.join(", ") : "",
         budgetInstruction: autoBudget ? "Suggère aussi le budget le plus approprié dans la liste ci-dessous basé sur la catégorie. Utilise seulement le nom du budget:" : "",
         budgetsList: autoBudget ? budgets.join(", ") : ""
@@ -179,9 +195,9 @@ ${languageConfig.budgetsList}
     const jsonFormat = `{\n  ${fields.join(',\n  ')}\n}`;
     
     if (this.#language === "EN") {
-      return `Respond ONLY in the following JSON format:\n${jsonFormat}\nFor the account name, use only the company/merchant/entity name (e.g., 'Amazon', 'Generali', 'McDonald's'), not the category + company name. For the budget, choose the most appropriate budget based on the category.`;
+      return `Respond ONLY in the following JSON format:\n${jsonFormat}\nFor the account name, use only the company/merchant/entity name (e.g., 'Amazon', 'Generali', 'McDonald's'), not the category + account name.`;
     } else {
-      return `Réponds UNIQUEMENT au format JSON suivant:\n${jsonFormat}\nPour le nom du compte, utilise seulement le nom de l'entreprise/merchant/entité (ex: 'Amazon', 'Generali', 'McDonald's'), pas la catégorie + nom d'entreprise. Pour le budget, choisis le budget le plus approprié basé sur la catégorie.`;
+      return `Réponds UNIQUEMENT au format JSON suivant:\n${jsonFormat}\nPour le nom du compte, utilise seulement le nom de l'entreprise/merchant/entité (ex: 'Amazon', 'Generali', 'McDonald's'), pas la catégorie + nom de compte.`;
     }
   }
 
