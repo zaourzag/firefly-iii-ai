@@ -1,3 +1,61 @@
+/**
+ * OpenAI Service for AI-powered transaction categorization
+ * 
+ * OPENAI_BASE_URL Environment Variable Support:
+ * ==========================================
+ * 
+ * This service supports configuring a custom OpenAI-compatible API endpoint via the OPENAI_BASE_URL
+ * environment variable. This is particularly useful for:
+ * 
+ * 1. Using alternative OpenAI-compatible APIs (like Azure OpenAI, local deployments)
+ * 2. Using Google Gemini API through OpenAI-compatible endpoints
+ * 3. Using custom proxy servers or API gateways
+ * 
+ * Configuration Examples:
+ * ----------------------
+ * 
+ * Standard OpenAI (default):
+ * OPENAI_API_KEY=your-api-key
+ * OPENAI_MODEL=gpt-3.5-turbo
+ * # OPENAI_BASE_URL is optional and defaults to OpenAI's official endpoint
+ * 
+ * Google Gemini via OpenAI-compatible endpoint:
+ * OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+ * OPENAI_API_KEY=your-gemini-api-key
+ * OPENAI_MODEL=gemini-pro
+ * 
+ * Azure OpenAI:
+ * OPENAI_BASE_URL=https://your-resource.openai.azure.com/
+ * OPENAI_API_KEY=your-azure-api-key
+ * OPENAI_MODEL=gpt-35-turbo
+ * 
+ * Local OpenAI-compatible server:
+ * OPENAI_BASE_URL=http://localhost:8000/v1/
+ * OPENAI_API_KEY=local-api-key-or-empty
+ * OPENAI_MODEL=your-local-model
+ * 
+ * Usage Priority:
+ * --------------
+ * 1. Constructor baseURL parameter (if provided) overrides environment variable
+ * 2. OPENAI_BASE_URL environment variable (if set)  
+ * 3. OpenAI SDK default (https://api.openai.com/v1) if neither is provided
+ * 
+ * Gemini Compatibility Notes:
+ * ---------------------------
+ * When using Google Gemini through OpenAI-compatible endpoints:
+ * - Set OPENAI_BASE_URL to the Gemini OpenAI-compatible endpoint
+ * - Use Gemini model names (e.g., gemini-pro, gemini-1.5-pro)
+ * - Ensure your Gemini API key has appropriate permissions
+ * - Some advanced OpenAI features may not be available with Gemini
+ * 
+ * Constructor Parameters:
+ * ----------------------
+ * @param {string} apiKey - OpenAI API key (required)
+ * @param {string} model - AI model to use (default: gpt-3.5-turbo-instruct)
+ * @param {string} language - Response language FR/EN (default: FR)
+ * @param {string} baseURL - Custom API endpoint (optional, overrides OPENAI_BASE_URL env var)
+ */
+
 import OpenAI from "openai";
 import { getConfigVariable } from "./util.js";
 
@@ -7,13 +65,30 @@ export default class OpenAiService {
   #language;
   #DEBUG;
 
-  constructor(apiKey, model = "gpt-3.5-turbo-instruct", language = "FR") {
+  constructor(apiKey, model = "gpt-3.5-turbo-instruct", language = "FR", baseURL = null) {
     this.#model = model;
     this.#language = language;
     this.#DEBUG = getConfigVariable("DEBUG", "false") === "true";
 
-    this.#openAi = new OpenAI({
+    // Determine baseURL priority: constructor param > OPENAI_BASE_URL env var > OpenAI SDK default
+    const envBaseURL = getConfigVariable("OPENAI_BASE_URL", "");
+    const effectiveBaseURL = baseURL || (envBaseURL || undefined);
+    
+    const openAIConfig = {
       apiKey,
+    };
+    
+    if (effectiveBaseURL) {
+      openAIConfig.baseURL = effectiveBaseURL;
+    }
+
+    this.#openAi = new OpenAI(openAIConfig);
+    
+    this.#debugLog("OpenAI client initialized", {
+      model: this.#model,
+      language: this.#language,
+      baseURL: effectiveBaseURL || "default",
+      hasCustomBaseURL: !!effectiveBaseURL
     });
   }
 

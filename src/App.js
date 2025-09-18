@@ -150,12 +150,14 @@ export default class App {
       this.#aiService = new OpenAiService(
         getConfigVariable("OPENAI_API_KEY"),
         getConfigVariable("OPENAI_MODEL", "gpt-3.5-turbo"),
-        this.#LANGUAGE
+        this.#LANGUAGE,
+        getConfigVariable("OPENAI_BASE_URL", "")
       );
       console.log(`Using OpenAI with model: ${getConfigVariable("OPENAI_MODEL", "gpt-3.5-turbo")}`);
       this.#debugLog("OpenAI service initialized", {
         model: getConfigVariable("OPENAI_MODEL", "gpt-3.5-turbo"),
-        language: this.#LANGUAGE
+        language: this.#LANGUAGE,
+        baseURL: getConfigVariable("OPENAI_BASE_URL", "") || "default"
       });
     }
 
