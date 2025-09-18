@@ -1,3 +1,18 @@
+/*
+ * OpenAiService - OpenAI-compatible API service for transaction categorization
+ * 
+ * Supports OpenAI-compatible APIs via baseURL configuration:
+ * - Pass baseURL explicitly: new OpenAiService(apiKey, model, language, baseURL)
+ * - Use environment variable: Set OPENAI_BASE_URL in your .env file
+ * - If neither is provided, defaults to OpenAI's standard API
+ * 
+ * Example with Google Gemini:
+ * OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+ * OPENAI_API_KEY=your-google-api-key
+ * 
+ * Example with local OpenAI-compatible server:
+ * OPENAI_BASE_URL=http://localhost:8080/v1
+ */
 import OpenAI from "openai";
 import { getConfigVariable } from "./util.js";
 
@@ -7,14 +22,24 @@ export default class OpenAiService {
   #language;
   #DEBUG;
 
-  constructor(apiKey, model = "gpt-3.5-turbo-instruct", language = "FR") {
+  constructor(apiKey, model = "gpt-3.5-turbo-instruct", language = "FR", baseURL = null) {
     this.#model = model;
     this.#language = language;
     this.#DEBUG = getConfigVariable("DEBUG", "false") === "true";
 
-    this.#openAi = new OpenAI({
+    // Use explicit baseURL if provided, otherwise check environment variable
+    const configuredBaseURL = baseURL || getConfigVariable("OPENAI_BASE_URL", "");
+    
+    const openAIConfig = {
       apiKey,
-    });
+    };
+    
+    // Only set baseURL if it's provided and not empty
+    if (configuredBaseURL && configuredBaseURL.trim() !== "") {
+      openAIConfig.baseURL = configuredBaseURL;
+    }
+
+    this.#openAi = new OpenAI(openAIConfig);
   }
 
   #debugLog(message, data = null) {
